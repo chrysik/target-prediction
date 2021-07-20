@@ -38,6 +38,8 @@ class DataModeling:
         rf : Model
             Returns the trained random forest model
         """
+        if not isinstance(random_search, bool):
+            raise AttributeError("random_search must be True or False")
         if random_search:
             best_params = self.__random_search()
             logging.info(f'\nBest parameters:\n {best_params}')

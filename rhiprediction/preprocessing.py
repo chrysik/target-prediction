@@ -44,7 +44,7 @@ class DataPreprocessing:
         self.df_target_name = 'Target'
         self.target = 'target'
 
-    def data_loader(self):
+    def __data_loader(self):
         """Load the datasets and create a dictionary of them."""
         df_raw = pd.read_csv(self.df_raw_path, delimiter=";")
         df_target = pd.read_csv(self.df_target_path, delimiter=";")
@@ -69,9 +69,14 @@ class DataPreprocessing:
         df : DataFrame
             Returns the merged and clean dataframe
         """
+        if not isinstance(auto_profiling, bool):
+            raise AttributeError("auto_profiling must be True or False")
+        if not isinstance(generate_plots, bool):
+            raise AttributeError("generate_plots must be True or False")
         self.auto_profiling = auto_profiling
         self.generate_plots = generate_plots
 
+        self.__data_loader()
         self.__clean_column_names()
         self.__initial_profiling()
         self.__fix_dtypes()
@@ -113,7 +118,7 @@ class DataPreprocessing:
             for col in df_dict['df'].columns:
                 df_dict['df'].rename(
                     columns={col: col.lower().strip().replace(":", "")
-                                     .replace(" ", "_")}, inplace=True)
+                        .replace(" ", "_")}, inplace=True)
 
     def __initial_profiling(self):
         """Execute a profiling on the initial data."""
@@ -172,7 +177,6 @@ class DataPreprocessing:
         if self.generate_plots:
             if not os.path.exists("plots"):
                 os.makedirs("plots")
-
             for name, df_dict in self.dfs.items():
                 # For categorical variables
                 len_cat = len(df_dict['df'].select_dtypes(
@@ -181,7 +185,9 @@ class DataPreprocessing:
                     fig, ax = plt.subplots(4, math.ceil(len_cat / 4),
                                            figsize=(len_cat * 2, len_cat * 3))
                     for variable, subplot in zip(
-                            df_dict['df_dtypes']['categ_cols'], ax.flatten()):
+                            df_dict['df'].select_dtypes(
+                                include=['category', 'object'])
+                                    .columns, ax.flatten()):
                         sns.countplot(df_dict['df'][variable],
                                       ax=subplot).set_title(
                             f'Histogram of {variable}')
@@ -195,9 +201,11 @@ class DataPreprocessing:
                     exclude=['category', 'object', 'datetime']).columns
                 if len(numer_cols) > 0:
                     df_dict['df'][numer_cols].hist(bins=15, figsize=(
-                           len(numer_cols) * 2, len(numer_cols) * 3),
-                           layout=(math.ceil(len(numer_cols) / 4), 4),
-                           label='Count')
+                        len(numer_cols) * 2, len(numer_cols) * 3),
+                                                   layout=(math.ceil(
+                                                       len(numer_cols) / 4),
+                                                           4),
+                                                   label='Count')
                     plt.savefig(f'plots/{name}_Histograms_Numerical.png',
                                 bbox_inches='tight')
 
@@ -267,7 +275,7 @@ class DataPreprocessing:
 
             # Boxplots with target
             fig, ax = plt.subplots(4, math.ceil(len(categ_col) / 4), figsize=(
-                                   len(categ_col) * 2, len(categ_col) * 3))
+                len(categ_col) * 2, len(categ_col) * 3))
             for variable, subplot in zip(categ_col, ax.flatten()):
                 sns.boxplot(x=variable, y=self.target, data=self.df_merged,
                             ax=subplot)

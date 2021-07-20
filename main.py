@@ -12,7 +12,6 @@ if __name__ == '__main__':
                            df_raw_types=df_raw_types,
                            df_target_types=df_target_types)
 
-    dp.data_loader()
     df_preprocessed = dp.preprocess_dfs(auto_profiling=False,
                                         generate_plots=True)
 
