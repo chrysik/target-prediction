@@ -1,3 +1,4 @@
+"""test modeling."""
 from rhiprediction import modeling
 import pytest
 import pandas as pd
@@ -14,5 +15,5 @@ dm = modeling.DataModeling(df)
         (None)
     ],
 )
-def test_random_forest(random_search):
+def test_random_forest(random_search):  # noqa: D103
     dm.random_forest(random_search=random_search)

@@ -1,13 +1,14 @@
 """DataPreprocessing."""
-import pandas as pd
-from pandas_profiling import ProfileReport
+import os
+import math
 import logging
+import warnings
+import pandas as pd
+import seaborn as sns
+from pandas_profiling import ProfileReport
 import matplotlib.pyplot as plt
 from statsmodels.graphics import tsaplots
-import math
-import seaborn as sns
-import os
-import warnings
+from statsmodels.formula.api import ols
 
 pd.set_option('display.max_columns', 40)
 warnings.filterwarnings(action='ignore')
@@ -86,11 +87,14 @@ class DataPreprocessing:
         self.__find_dataset_key()
         self.__merge_dfs()
         self.__merged_df_eda()
-        # Here handle outliers
         self.__feature_engineering()
         self.__handle_nan_values()
-        self.__feature_selection()  # Add an anova and a backpropagation
+        self.__feature_selection()
         self.__data_transformation()
+
+        logging.info(f'\nProcessed dataframe consists of '
+                     f'{self.df_merged.shape[0]} observations, with columns\n'
+                     f'{list(self.df_merged.columns)}')
         return self.df_merged
 
     def __dfs_to_dictionary(self, df_raw, df_target):
@@ -116,9 +120,9 @@ class DataPreprocessing:
         logging.info(f'Cleaning columns...')
         for name, df_dict in self.dfs.items():
             for col in df_dict['df'].columns:
-                df_dict['df'].rename(
-                    columns={col: col.lower().strip().replace(":", "")
-                        .replace(" ", "_")}, inplace=True)
+                df_dict['df'].rename(columns={col: col.lower().strip()
+                                     .replace(":", "")
+                                     .replace(" ", "_")}, inplace=True)
 
     def __initial_profiling(self):
         """Execute a profiling on the initial data."""
@@ -186,8 +190,8 @@ class DataPreprocessing:
                                            figsize=(len_cat * 2, len_cat * 3))
                     for variable, subplot in zip(
                             df_dict['df'].select_dtypes(
-                                include=['category', 'object'])
-                                    .columns, ax.flatten()):
+                                include=['category', 'object']).columns,
+                            ax.flatten()):
                         sns.countplot(df_dict['df'][variable],
                                       ax=subplot).set_title(
                             f'Histogram of {variable}')
@@ -389,7 +393,7 @@ class DataPreprocessing:
                             f'Variables{correlation_matrix.columns[i]}'
                             f' and {correlation_matrix.columns[j]} are'
                             f' correlated with correlation coefficient'
-                            f'{abs(correlation_matrix.iloc[i, j]).round(2)}')
+                            f' {abs(correlation_matrix.iloc[i, j]).round(2)}')
                         colname = correlation_matrix.columns[i]
                         correlated_features.add(colname)
             # Drop them
@@ -398,7 +402,61 @@ class DataPreprocessing:
                          f'have been removed.')
             return df
 
+        def anova_summary(df, target, categorical):
+            model_Operator = ols(
+                formula=str(target + ' ~ C(' + categorical + ')'),
+                data=df).fit()
+            return model_Operator.f_pvalue
+
+        def apply_anova(df, target):
+            categories = df.select_dtypes(
+                include=['category', 'object']).columns
+            for category in categories:
+                anova_f_pvalue = anova_summary(df, target, category)
+                if anova_f_pvalue > 0.05:
+                    logging.info(
+                        f'ANOVA results for variable "{category}":\n'
+                        f'p_value: {anova_f_pvalue.round(5)}\nThere is no '
+                        f'significant difference among the '
+                        f'different {category}'
+                        f' levels.\nRemoving "{category}" feature...\n')
+                    df = df.drop(category, axis=1)
+                else:
+                    logging.info(
+                        f'ANOVA results for variable "{category}":\n'
+                        f'p_value: {anova_f_pvalue.round(5)}\n'
+                        f'There is a significant effect of the '
+                        f'{category} levels on {self.target} values.\n')
+            return df
+
+        def remove_categ_many_levels(df):
+            """Remove categorical variables with many levels.
+
+            To avoid under-representation.
+            """
+            categories = df.select_dtypes(
+                include=['category', 'object']).columns
+            for category in categories:
+                if self.df_merged[category].nunique() > 10:
+                    logging.info(
+                        f'Feature "{category}" contains '
+                        f'{self.df_merged[category].nunique()} levels. '
+                        f'Feature will be removed.')
+                    df = df.drop(category, axis=1)
+                    # TODO: Apply post hoc anova to group the levels
+            return df
+
         self.df_merged = remove_highly_cor_values(self.df_merged, cor=0.8)
+        self.df_merged = apply_anova(self.df_merged, self.target)
+        self.df_merged = remove_categ_many_levels(self.df_merged)
+        # TODO: Add another feature selection method here,
+        #  i.e. Backpropagation
+
+        # Remove tracking feature as it has an incremental nature
+        # TODO: Transform tracking feature into binary
+        self.df_merged = self.df_merged.drop("tracking", axis=1)
+        logging.info(
+            f'Dataset size after feature selection {self.df_merged.shape}.')
 
     def __data_transformation(self):
         """Perform data transformation.
@@ -410,14 +468,18 @@ class DataPreprocessing:
         logging.info('\nTransforming categorical variables to dummy...')
         self.df_merged = pd.get_dummies(self.df_merged, drop_first=True)
         # Aggregation
-        logging.info('\nAggregating observations with equal'
+        logging.info('\nAggregating observations with equal '
                      'feature values and different target values...')
-        logging.info('Examples of observations with same values'
-                     'in all features except from the target value:\n')
-        example_agg = self.df_merged[self.df_merged.duplicated(
-            subset=[i for i in self.df_merged.columns if i != self.target],
-            keep=False)].sort_values("crystal_weight", ascending=False).head(6)
-        logging.info(f'{example_agg}')
+        # logging.info('Examples of observations with same values'
+        #              'in all features except from the target value:\n')
+        # example_agg =
+        # self.df_merged[self.df_merged.duplicated(
+        # subset=[i for i in self.df_merged.columns if i != self.target],
+        # keep=False)].sort_values("crystal_weight", ascending=False).head(6)
+        # logging.info(f'{example_agg}')
         self.df_merged = self.df_merged \
             .groupby([i for i in self.df_merged.columns if i != self.target],
                      as_index=False).agg({'target': 'mean'})
+
+        logging.info(
+            f'Final dataset size {self.df_merged.shape}.')
