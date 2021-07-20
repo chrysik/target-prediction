@@ -1,0 +1,5 @@
+.tox/*
+venv/*
+.venv/*
+*.csv
+.idea/*
