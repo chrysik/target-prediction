@@ -1,3 +1,4 @@
+"""DataModeling."""
 import numpy as np
 import logging
 from sklearn.model_selection import RandomizedSearchCV
@@ -7,17 +8,18 @@ logging.basicConfig(level=logging.INFO, format="")
 
 
 class DataModeling:
-    """Creates the DataModeling class.
+    """Create the DataModeling class.
 
-     Construction:: dm = DataModeling(df="sample dataframe")
+    Construction:: dm = DataModeling(df="sample dataframe")
 
-     Parameters
-     ----------
-     df: Dataframe
-         Dataframe that contains the features and target values.
-     """
+    Parameters
+    ----------
+    df: Dataframe
+        Dataframe that contains the features and target values.
+    """
 
     def __init__(self, df):
+        """Initialize DataModeling class."""
         self.df = df
         self.target = 'target'
         self.train_labels = np.array(self.df[self.target])
@@ -30,12 +32,12 @@ class DataModeling:
         ----------
         random_search : bool
             Whether to perform randomized search for hyperparameter tuning
+
         Returns
         -------
         rf : Model
             Returns the trained random forest model
         """
-
         if random_search:
             best_params = self.__random_search()
             logging.info(f'\nBest parameters:\n {best_params}')

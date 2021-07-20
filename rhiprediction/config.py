@@ -1,10 +1,11 @@
+"""Config file."""
 raw_data_folder = "raw_data"
 
 df_raw_types = {"datetime_cols":
-                    ["when", "expected_start", "start_process",
-                     "start_subprocess1", "start_critical_subprocess1",
-                     "predicted_process_end", "process_end",
-                     "subprocess1_end", "reported_on_tower", "opened"],
+                ["when", "expected_start", "start_process",
+                 "start_subprocess1", "start_critical_subprocess1",
+                 "predicted_process_end", "process_end",
+                 "subprocess1_end", "reported_on_tower", "opened"],
                 "int_cols":
                     ["unnamed_0", "groups", "tracking", "unnamed_7",
                      "human_measure", "expected_factor_x"],
