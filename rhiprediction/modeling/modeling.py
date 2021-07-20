@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format="")
 
 
 class DataModeling:
-    """Creates the DataModeling class
+    """Creates the DataModeling class.
 
      Construction:: dm = DataModeling(df="sample dataframe")
 
@@ -24,20 +24,16 @@ class DataModeling:
         self.train_features = np.array(self.df.drop([self.target], axis=1))
 
     def random_forest(self, random_search=False):
-
-        """
-        Trains and evaluates the random forest model.
+        """Train and evaluate the random forest model.
 
         Parameters
         ----------
         random_search : bool
             Whether to perform randomized search for hyperparameter tuning
-
         Returns
         -------
         rf : Model
             Returns the trained random forest model
-
         """
 
         if random_search:
@@ -51,25 +47,26 @@ class DataModeling:
                            'max_depth': 20,
                            'bootstrap': True}
 
-        rf = RandomForestRegressor(n_estimators=best_params['n_estimators'],
-                                   min_samples_split=best_params['min_samples_split'],
-                                   min_samples_leaf=best_params['min_samples_leaf'],
-                                   max_features=best_params['max_features'],
-                                   max_depth=best_params['max_depth'],
-                                   bootstrap=best_params['bootstrap'],
-                                   random_state=42)
+        rf = RandomForestRegressor(
+            n_estimators=best_params['n_estimators'],
+            min_samples_split=best_params['min_samples_split'],
+            min_samples_leaf=best_params['min_samples_leaf'],
+            max_features=best_params['max_features'],
+            max_depth=best_params['max_depth'],
+            bootstrap=best_params['bootstrap'],
+            random_state=42)
         rf.fit(self.train_features, self.train_labels)
         self.__evaluate_model(rf)
         return rf
 
     def __random_search(self):
-        """Performs randomized search for hyperparameter tuning"""
-        n_estimators = [100, 200, 300]  # Number of trees
-        max_features = ['auto', 'sqrt']  # Number of features to consider at every split
-        max_depth = [10, 20]  # Maximum depth in tree
-        min_samples_split = [5, 10]  # Minimum number of samples required to split a node
-        min_samples_leaf = [3, 5]  # Minimum number of samples required at each leaf node
-        bootstrap = [True, False]  # Method of selecting samples for training each tree
+        """Perform randomized search for hyperparameter tuning."""
+        n_estimators = [100, 200, 300]
+        max_features = ['auto', 'sqrt']
+        max_depth = [10, 20]
+        min_samples_split = [5, 10]
+        min_samples_leaf = [3, 5]
+        bootstrap = [True, False]
 
         # Create the random grid
         random_grid = {'n_estimators': n_estimators,
@@ -82,13 +79,15 @@ class DataModeling:
 
         # Use the random grid to search for best hyperparameters
         rf = RandomForestRegressor()
-        rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=2, verbose=2,
-                                       scoring='neg_mean_absolute_error')  # Fit the random search model
+        rf_random = RandomizedSearchCV(
+            estimator=rf, param_distributions=random_grid,
+            n_iter=100, cv=2, verbose=2,
+            scoring='neg_mean_absolute_error')
         rf_random.fit(self.train_features, self.train_labels)
         return rf_random.best_params_
 
     def __evaluate_model(self, model):
-        """Evaluates the model
+        """Evaluate the model.
 
         Parameters
         ----------
@@ -97,4 +96,5 @@ class DataModeling:
         """
         predictions = model.predict(self.train_features)
         errors = abs(predictions - self.train_labels)
-        logging.info(f'Mean Absolute Error: {round(np.mean(errors), 2)} degrees.')
+        logging.info(f'Mean Absolute Error:'
+                     f'{round(np.mean(errors), 2)} degrees.')

@@ -44,16 +44,14 @@ class DataPreprocessing:
         self.target = 'target'
 
     def data_loader(self):
-        """
-        Loads the datasets, Raw and Target, and creates a dictionary of them
-        """
+        """Load the datasets, Raw and Target, and create a dictionary of them."""
         df_raw = pd.read_csv(self.df_raw_path, delimiter=";")
         df_target = pd.read_csv(self.df_target_path, delimiter=";")
         self.__dfs_to_dictionary(df_raw, df_target)
 
     def preprocess_dfs(self, auto_profiling=False, generate_plots=False):
-        """
-        Preprocess the datasets Raw and Target, so that they are ready to by consumed by the model
+        """Preprocess the datasets Raw and Target, so that they are ready to by consumed by the model.
+
         Includes EDA, cleaning, feature engineering, feature selection and data transformation
 
         Parameters
@@ -85,13 +83,12 @@ class DataPreprocessing:
         # Here handle outliers
         self.__feature_engineering()
         self.__handle_nan_values()
-        self.__feature_selection()  # Here do a anova and maybe add a backpropagation or forward propagation
+        self.__feature_selection()  # Add an anova and a backpropagation
         self.__data_transformation()
         return self.df_merged
 
     def __dfs_to_dictionary(self, df_raw, df_target):
-        """
-        Puts Raw and Target dataset in a dictionary, with information such as name and datatypes
+        """Put Raw and Target dataset in a dictionary, with information such as name and datatypes.
 
         Parameters
         ----------
@@ -107,7 +104,7 @@ class DataPreprocessing:
                     }
 
     def __clean_column_names(self):
-        """Cleans the column names"""
+        """Clean the column names."""
         logging.info(f'Cleaning columns...')
         for name, df_dict in self.dfs.items():
             for col in df_dict['df'].columns:
@@ -115,7 +112,7 @@ class DataPreprocessing:
                                      .replace(" ", "_")}, inplace=True)
 
     def __initial_profiling(self):
-        """Execute a profiling on the initial data"""
+        """Execute a profiling on the initial data."""
         if self.auto_profiling:
             logging.info(f'Initiating data profiling...')
             if not os.path.exists("profiling"):
@@ -184,7 +181,7 @@ class DataPreprocessing:
                     plt.savefig(f'plots/{name}_Histograms_Numerical.png', bbox_inches='tight')
 
     def __find_index_column(self):
-        """Find the index column in Raw dataset"""
+        """Find the index column in Raw dataset."""
         # Check if "index" in Raw dataset
         if 'index' in self.dfs['Raw']['df'].columns:
             pass
@@ -205,7 +202,7 @@ class DataPreprocessing:
             self.dfs['Raw']['df'] = self.dfs['Raw']['df'].rename(columns={max_sim_col: "index"})
 
     def __find_dataset_key(self):
-        """Find the key of the datasets"""
+        """Find the key of the datasets."""
         # For both the Target and Raw datasets, the colums "index" and "groups"  consist the key of the tables
         for name, df_dict in self.dfs.items():
             if df_dict['df'][df_dict['df'].duplicated(subset=['index', 'groups'], keep=False)].shape[0] == 0:
@@ -213,7 +210,7 @@ class DataPreprocessing:
             self.dfs[name]['df'] = df_dict['df'].drop_duplicates(subset=['index', 'groups'], keep=False)
 
     def __merge_dfs(self):
-        """Merge Raw and Target dataframes"""
+        """Merge Raw and Target dataframes."""
         logging.info(f'\nMerging datasets...')
         self.df_merged = pd.merge(self.dfs['Raw']['df'], self.dfs['Target']['df'], how='inner',
                                   left_on=['index', 'groups'], right_on=['index', 'groups'])
@@ -223,7 +220,9 @@ class DataPreprocessing:
 
     def __merged_df_eda(self):
         """Perform analysis on the merged dataset.
-        Generate Boxplots, Scatterplots, Correlation and Autocorrelation plots """
+
+        Generate Boxplots, Scatterplots, Correlation and Autocorrelation plots
+        """
         if self.generate_plots:
             # Remove unused categories
             categ_col = self.df_merged.select_dtypes(include=['category', 'object']).columns
@@ -271,7 +270,9 @@ class DataPreprocessing:
 
     def __feature_engineering(self):
         """Perform feature engineering.
-        Create new columns from the datetime columns."""
+
+        Create new columns from the datetime columns.
+        """
         def timestamp_substractions(df_merged, newcol, col1, col2):
             df_merged[newcol] = df_merged[col2] - df_merged[col1]
             df_merged[newcol] = df_merged[newcol].astype('timedelta64[m]')
@@ -289,7 +290,7 @@ class DataPreprocessing:
         self.df_merged = self.df_merged.drop(self.df_merged.select_dtypes(include=['datetime']).columns, axis=1)
 
     def __handle_nan_values(self):
-        """Handles nan values"""
+        """Handle nan values."""
         # Log percent missing
         percent_missing = self.df_merged.isnull().sum() * 100 / len(self.df_merged)
         missing_value_df = pd.DataFrame({'column_name': self.df_merged.columns,
@@ -307,7 +308,7 @@ class DataPreprocessing:
         logging.info('NaN values handled.')
 
     def __feature_selection(self):
-        """Performs feature selection"""
+        """Perform feature selection."""
         def remove_highly_cor_values(df, cor=0.8):
             logging.info('\nRemove highly correlated variables.')
             correlation_matrix = df.corr()
@@ -329,8 +330,10 @@ class DataPreprocessing:
 
     def __data_transformation(self):
         """Perform data transformation.
+
         Convert categorical variable into dummy/indicator variables.
-        Aggregating rows with equal feature values and different target values."""
+        Aggregating rows with equal feature values and different target values.
+        """
         # Categorical variables to dummy
         logging.info('\nTransforming categorical variables to dummy...')
         self.df_merged = pd.get_dummies(self.df_merged, drop_first=True)
