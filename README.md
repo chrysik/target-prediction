@@ -58,3 +58,6 @@ Example:
 Under the `tests` folder can be found some *indicative* tests.
 
 The tests can be run with the command `python -m pytest`.
+
+### Additional information
+The plots generated are being saved under the `plots` folder.
