@@ -61,3 +61,6 @@ The tests can be run with the command `python -m pytest`.
 
 ### Additional information
 The plots generated are being saved under the `plots` folder.
+
+The initial generated profiling html files can be found under the 
+`profiling` folder.
