@@ -1,6 +1,4 @@
 """Config file."""
-raw_data_folder = "raw_data"
-
 df_raw_types = {"datetime_cols":
                 ["when", "expected_start", "start_process",
                  "start_subprocess1", "start_critical_subprocess1",

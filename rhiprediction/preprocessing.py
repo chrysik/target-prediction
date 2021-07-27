@@ -204,7 +204,6 @@ class DataPreprocessing:
                 numer_cols = df_dict['df'].select_dtypes(
                     exclude=['category', 'object', 'datetime']).columns
                 if len(numer_cols) > 0:
-                    print(len(numer_cols))
                     if len(numer_cols) == 3:
                         df_dict['df'][numer_cols].hist(bins=15, figsize=(
                             10, 5), layout=(1, 3), label='Count')
