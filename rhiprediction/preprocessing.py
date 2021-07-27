@@ -204,14 +204,16 @@ class DataPreprocessing:
                 numer_cols = df_dict['df'].select_dtypes(
                     exclude=['category', 'object', 'datetime']).columns
                 if len(numer_cols) > 0:
-                    df_dict['df'][numer_cols].hist(bins=15, figsize=(
-                        len(numer_cols) * 2, len(numer_cols) * 3),
-                                                   layout=(math.ceil(
-                                                       len(numer_cols) / 4),
-                                                           4),
-                                                   label='Count')
-                    plt.savefig(f'plots/{name}_Histograms_Numerical.png',
-                                bbox_inches='tight')
+                    print(len(numer_cols))
+                    if len(numer_cols) == 3:
+                        df_dict['df'][numer_cols].hist(bins=15, figsize=(
+                            10, 5), layout=(1, 3), label='Count')
+                    else:
+                        df_dict['df'][numer_cols].hist(bins=15, figsize=(
+                            len(numer_cols) * 2, len(numer_cols) * 3),
+                                layout=(math.ceil(len(numer_cols) / 4), 4),
+                                label='Count')
+                    plt.savefig(f'plots/{name}_Histograms_Numerical.png')
 
     def __find_index_column(self):
         """Find the index column in Raw dataset."""
@@ -364,7 +366,7 @@ class DataPreprocessing:
         missing_value_df = pd.DataFrame(
             {'column_name': self.df_merged.columns,
              'percent_missing': percent_missing.round(1)})
-        logging.info(f'\n Mining values:\n {missing_value_df}')
+        logging.info(f'\n Missing values:\n {missing_value_df}')
 
         # Delete the categorical missing
         for col in self.df_merged.select_dtypes(
