@@ -12,7 +12,12 @@ from statsmodels.formula.api import ols
 
 pd.set_option('display.max_columns', 40)
 warnings.filterwarnings(action='ignore')
-logging.basicConfig(level=logging.INFO, format="")
+logging.basicConfig(level=logging.INFO,
+                    format="",
+                    handlers=[logging.FileHandler(filename="./logs.txt",
+                                                  encoding='utf-8'),
+                              logging.StreamHandler()]
+                    )
 
 
 class DataPreprocessing:

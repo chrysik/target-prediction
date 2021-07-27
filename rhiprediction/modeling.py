@@ -4,8 +4,10 @@ import logging
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
-logging.basicConfig(level=logging.INFO, format="")
+logging.basicConfig(level=logging.INFO, format="",
+                    filename='logs.txt', filemode='a')
 
 
 class DataModeling:
@@ -70,6 +72,7 @@ class DataModeling:
                      f'\nTest set size: {self.test_features.shape[0]} rows.\n')
 
         rf.fit(self.train_features, self.train_labels)
+
         self.__evaluate_model(rf)
         return rf
 
@@ -108,11 +111,54 @@ class DataModeling:
         model : Model
             The trained and fitted model
         """
+
+        def plot_expected_predicted(setname, features, labels, model, errors):
+            predictions = model.predict(features)
+            # print('MAE: %.3f' % mae)
+            # Plot expected vs predicted
+            fig, ax = plt.subplots(figsize=(16, 6))
+            plt.plot(labels, label='True values', color='red')
+            plt.plot(predictions, 'ro', label='Predicted values', color='blue')
+            plt.title(f'Expected vs Predicted values on {setname} set')
+            plt.ylabel("Target")
+            plt.xlabel(f'{setname} set Observations')
+            plt.xticks([])
+            ax.text(0.95, 0.01, f'Mean Absolute Error: {errors}', fontsize=10,
+                    bbox={'facecolor': 'white', 'alpha': 1, 'pad': 10})
+            plt.legend()
+            plt.savefig(f'plots/Prediction_vs_{setname}_set_results.png')
+
+            _, _ = plt.subplots(figsize=(16, 6))
+            plt.plot(labels - predictions, marker='o', linestyle='')
+            plt.xticks([])
+            plt.title(f'Prediction Errors on {setname} set')
+            plt.ylabel("Error")
+            plt.xlabel(f'{setname} set Observations')
+            plt.savefig(f'plots/Prediction_Errors_{setname}_set_results.png')
+
+            logging.info(f'Min prediction value:'
+                         f'{predictions.min().round(2)}\n'
+                         f'Max prediction value:'
+                         f'{predictions.max().round(2)}\n'
+                         f'Mean prediction values:'
+                         f'{predictions.mean().round(2)}')
+            logging.info(f'Min true value: {labels.min().round(2)}\n'
+                         f'Max true value: {labels.max().round(2)}\n'
+                         f'Mean true values: {labels.mean().round(2)}\n')
+
         predictions_train = model.predict(self.train_features)
         errors_train = abs(predictions_train - self.train_labels)
         predictions_test = model.predict(self.test_features)
         errors_test = abs(predictions_test - self.test_labels)
+        mean_abs_error_train = round(np.mean(errors_train), 2)
         logging.info(f'Mean Absolute Error in Train set: '
-                     f'{round(np.mean(errors_train), 2)} degrees.')
+                     f'{mean_abs_error_train} degrees.')
+        mean_abs_error_test = round(np.mean(errors_test), 2)
         logging.info(f'Mean Absolute Error in Test set: '
-                     f'{round(np.mean(errors_test), 2)} degrees.')
+                     f'{mean_abs_error_test} degrees.')
+
+        # Visualize predicted vs expected values over time
+        plot_expected_predicted('Test', self.test_features,
+                                self.test_labels, model, mean_abs_error_test)
+        plot_expected_predicted('Train', self.train_features,
+                                self.train_labels, model, mean_abs_error_train)
